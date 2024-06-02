@@ -15,11 +15,5 @@ object Main {
 
 //    SparkUtils.getFileData(Paths.ResoureBasePath,FileFormat.CSV,"transactions.csv",options).show()
 
-//    DataLoader.getBankData(spark).show()
-//    DataLoader.getBranchData(spark).show()
-//    DataLoader.getCustomerData(spark).show()
-//    DataLoader.getAccountData(spark).show()
-//    DataLoader.getTransactions(spark).show()
-
   }
 }
