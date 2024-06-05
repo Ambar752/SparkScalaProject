@@ -9,7 +9,10 @@ import org.apache.spark.sql.functions.expr
 import java.sql.Date
 import scala.util.Random
 
-object DataLoader {
+object DataLoader extends SparkSessionProvider {
+
+     override implicit val appName: String =  "DataLoader"
+     override implicit val master: String = "local[*]"
 
      def getRandomDate(seedDate: Date, maxDaysFromSeedDate: Int): Date = {
        val random = new Random()
@@ -73,7 +76,8 @@ object DataLoader {
 
   def getAccountData(implicit spark: SparkSession): DataFrame = {
     var accountData: Seq[Account] = Seq()
-    val spark = SparkUtils.getSparkSession("DataLoader")
+    //val spark = SparkUtils.getSparkSession("DataLoader")
+    val spark = DataLoader.getSparkSession
     val listOfCustomers = getCustomerData(spark).select("CustomerID").collect().map(_.getInt(0)).toList
     var startAccountID = 1000
     var startBranchID = 10
@@ -119,4 +123,7 @@ object DataLoader {
 
     transactionsWrapped.toDF()
   }
+
+
+
 }

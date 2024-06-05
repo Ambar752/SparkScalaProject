@@ -2,10 +2,12 @@ package com.ambar.utils
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object DataAnalytics {
-
+object DataAnalytics extends SparkSessionProvider {
+  implicit val appName: String = "Analytics"
+  override val master: String = "local[*]"
   //Example of Implicit Parameter
-  implicit val spark:SparkSession = new customSparkSession("Analytics").getSparkSession
+  //implicit val spark:SparkSession = new customSparkSession("Analytics").getSparkSession
+  implicit val spark:SparkSession = DataAnalytics.getSparkSession
 
   var txnDF = DataLoader.getTransactions
   var accountDF = DataLoader.getAccountData

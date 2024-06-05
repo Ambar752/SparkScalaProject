@@ -1,19 +1,22 @@
 import com.ambar.models.{FileFormat, Paths}
-import com.ambar.utils.{DataAnalytics, DataLoader, SparkUtils}
+import com.ambar.utils.{DataAnalytics, DataLoader, SparkSessionProvider, SparkUtils, customSparkSession}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import com.ambar.utils.customSparkSession
 
-class DataAnalyticsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with BeforeAndAfter {
+class DataAnalyticsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with BeforeAndAfter with SparkSessionProvider {
 
-  var sparkTest: SparkSession = _
+  implicit var sparkTest:SparkSession = _
+  override implicit val appName: String = "TestDataAnalytics"
+  override implicit val master: String = "local[*]"
+
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    sparkTest = new customSparkSession("TestDataAnalytics").getSparkSession
+    sparkTest = new DataAnalyticsTest().getSparkSession
+    //sparkTest = new customSparkSession("TestDataAnalytics").getSparkSession
     //sparkTest = SparkUtils.getSparkSession("TestDataAnalytics","local[*]")
   }
 
@@ -23,8 +26,9 @@ class DataAnalyticsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll
   }
 
   before {
+    sparkTest = new DataAnalyticsTest().getSparkSession
     val options = Map("inferSchema" -> "true","header" -> "true")
-    DataAnalytics.txnDF = SparkUtils.getFileData(sparkTest,Paths.ResoureBasePath,FileFormat.CSV,"transactionsTest.csv",options)
+    DataAnalytics.txnDF = SparkUtils.getFileData(Paths.ResoureBasePath,FileFormat.CSV,"transactionsTest.csv",options)
 
   }
 
