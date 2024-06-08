@@ -1,9 +1,18 @@
 package com.ambar.miscScalaPractice
 
 import com.ambar.utils.{DataLoader, SparkSessionProvider}
-import org.apache.spark.sql.functions.{broadcast, col, explode, split}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.functions.{avg, broadcast, col, explode, lit, round, split, sum, udf}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.types.{ArrayType, IntegerType, StringType, StructField, StructType}
+import org.apache.spark.util.LongAccumulator
+import com.typesafe.config.{Config, ConfigFactory}
+
+import java.sql.Date
+import java.util.regex.Pattern
+
+//How to define Custom Classes
+class invalidIndexNumber(message: String, cause: Throwable=null) extends Exception(message,cause)
+class delimiterNotFound(message: String, cause: Throwable=null) extends Exception(message,cause)
 
 object SparkScalaPractice extends SparkSessionProvider with App {
 
@@ -54,31 +63,136 @@ object SparkScalaPractice extends SparkSessionProvider with App {
     //Set Executor Memory Config on Spark Session and Print Same
     val sampleSparkSession = SparkSession.builder().appName("sample").config("spark.executor.memory","4g").getOrCreate()
     println(sampleSparkSession.conf.get("spark.executor.memory"))
-    sampleSparkSession.stop()
 
+
+    //Example of FoldLeft and FoldRight
+    val listOfColumns = Seq("Ambar","is","good","Developer")
+    var finalSentence = listOfColumns.foldLeft("")((acc, word) => acc + " " + word)
+    var finalSentence1 = listOfColumns.foldRight("")((word, acc) =>  word + " " + acc)
+    println(finalSentence)
+    println(finalSentence1)
+
+    //Example of ScanLeft and ScanRight
+    var finalSentence2 = listOfColumns.scanLeft("")((acc, word) =>  acc + " " + word)
+    println(finalSentence2)
+    var finalSentence3 = listOfColumns.scanRight("")((word, acc) =>  word + " " + acc)
+    println(finalSentence3)
+
+
+    //Example of using Map with DataFrame
+    //Example of Converting RDD to DataFrame
+    import spark.implicits._
+    NameAgeTupleDF.repartition(3).rdd.map(r => ("Dr. " + r.getAs[String]("Name"),r.getAs[Int]("Age")) ).toDF("Name","Age").show()
+
+    //Example of Accumulator
+    val sum1: LongAccumulator = spark.sparkContext.longAccumulator("count accumulator")
+    NameAgeTupleDF.repartition(3).foreach(r => sum1.add(r.getInt(1)))
+    println("Sum of Ages is : " + sum1.value.toString)
+
+    //Example of BroadCast variable
+    //Example of using Map with DataFrame
+    //Example of Converting RDD to DataFrame
+    val myMap : Map[String,String] = Map("Ambar" -> "Acharya","Swati"->"Gupta","Loma"->"Ach")
+    val myBroadcastedMap = spark.sparkContext.broadcast(myMap)
+
+    NameAgeTupleDF.repartition(3).rdd.map(row =>
+    {(row.getAs[String]("Name"),
+      row.getAs[Int]("Age"),
+      row.getAs[String]("Name") + " " + myBroadcastedMap.value.getOrElse(row.getAs[String]("Name"),"Unknown"))})
+      .toDF("Name","Age","FullName").show(truncate = false)
+
+    //Example of Regular Expression
+    val pattern = Pattern.compile("^(.)+@(.)+$")
+    println(pattern.matcher("ambar@ach").matches())
+
+
+    //Example to Stop SparkSession
+    sampleSparkSession.stop()
   }
 
+
+
   def simpleExplodeAndUDFExample = {
+
     val studentSubjectMarksScored = Seq( ("Ambar",List("Maths:90","Eng:50","Marathi:55"),35),
                                          ("Swati",List("Maths:70","Eng:80","Marathi:40"),32),
                                          ("Loma",List("Maths:50","Eng:55","Marathi:90"),50))
 
+    //How to convert Transform and Prep a Seq using Map
     val studentSubjectMarksScoredrowData = studentSubjectMarksScored.map(row => Row(row._1,row._2,row._3))
 
+    //How to use Structs
     val schema = StructType(Array(StructField("Name",StringType,nullable = false),
                                   StructField("SubjectScore",ArrayType(StringType,containsNull = false),nullable = false),
                                   StructField("Age",IntegerType,nullable = false)))
 
+    //How to convert a Seq to RDD
     val studentSubjectMarksScoredrowRDD = spark.sparkContext.parallelize(studentSubjectMarksScoredrowData)
 
-    val studentSubjectMarksScoredDF: DataFrame = spark.createDataFrame(studentSubjectMarksScoredrowRDD,schema)
+    //How to create Dataframe from RDD
+    var studentSubjectMarksScoredDF: DataFrame = spark.createDataFrame(studentSubjectMarksScoredrowRDD,schema)
 
-    studentSubjectMarksScoredDF.withColumn("SubjectScore",explode(col("SubjectScore"))).show()
+    //How to use Explode Function
+    studentSubjectMarksScoredDF = studentSubjectMarksScoredDF.withColumn("SubjectScore",explode(col("SubjectScore")))
+
+    def splitString(input: String, valueByIndex: Int): String = {
+
+      //How to handle Custom Exception
+      try {
+
+      if(!input.contains(":")) {
+        //How to throw a custom Exception
+        throw new delimiterNotFound("Delimiter ':' not found !")
+      }
+
+      if(valueByIndex == 0) {
+        return input.split(":")(0)
+      } else if (valueByIndex == 1) {
+        return input.split(":")(1)
+      } else {
+        throw new invalidIndexNumber("Index must be either 0 or 1")
+      }
+      } catch {
+        //How to catch a Custom Exception
+        //How to print StackTrace
+        case i : invalidIndexNumber => i.printStackTrace(); return "Invalid Index !";
+        case d : delimiterNotFound => d.printStackTrace(); return " ':' delimiter not found !"
+      }
+
+    }
+
+    //How to define UDF which uses Scala Method as Input
+    val splitStringUDF = udf(splitString _)
+
+    studentSubjectMarksScoredDF = studentSubjectMarksScoredDF
+                                 .withColumn("Subject",splitStringUDF(col("SubjectScore"),lit(2)))
+                                 .withColumn("Marks",splitStringUDF(col("SubjectScore"),lit(1)))
+
+    //How to use groupBy, alias, cast, agg, sum, round functions with Dataframe
+    val studentWiseTotalMarksDF = studentSubjectMarksScoredDF
+                                  .groupBy(col("Name"))
+                                  .agg(sum(col("Marks")).cast("int").cast("string").alias("Total Marks"),
+                                       round(avg(col("Marks")),2).alias("Avg Marks"))
+
+
+
+    studentWiseTotalMarksDF.show()
 
   }
 
+  def readProjectConfigs() : Unit = {
+
+    //Always use a Source Root Path (i.e. Relative Path from Folder marked as Source Root)
+    val config: Config = ConfigFactory.load("config/application.conf")
+
+    //2 ways to Access Configs
+    println(config.getString("app.server.host"))
+    println(config.getConfig("app").getConfig("server").getString("host"))
+  }
+
   //broadcastJoin
-  //smallMiscConcepts
-  simpleExplodeAndUDFExample
+  smallMiscConcepts
+  //simpleExplodeAndUDFExample
+  //readProjectConfigs
 
 }
