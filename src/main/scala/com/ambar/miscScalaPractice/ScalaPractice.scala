@@ -1,6 +1,10 @@
 package com.ambar.miscScalaPractice
 
+import java.util
 import scala.collection.{SortedSet, mutable}
+import java.text.SimpleDateFormat
+import java.util.Date
+import org.apache.logging.log4j.LogManager
 
 object ScalaPractice extends App {
    def dataStructures(): Unit = {
@@ -98,6 +102,11 @@ object ScalaPractice extends App {
      //Convert a String to Comma Delimited
      println("AmbAr".map(_.toString).mkString(","))
 
+     //Convert a String to Date
+     val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+     val mydate    = formatter.parse("2024-01-01 12:00:00")
+     println(mydate)
+
 
 
 
@@ -128,6 +137,9 @@ object ScalaPractice extends App {
 
      //Sort Array in Descending Order
      myArrayWithASize.sortWith(_ > _).foreach(println)
+
+     //Sort Array in Descending Order
+     myArrayWithASize.sortBy(-_).foreach(println)
 
      //Perform Cube on each Element of Array and then do Sum of All Cubes
      var mybaseArray: Array[Int] = new Array[Int](3)
@@ -212,5 +224,154 @@ object ScalaPractice extends App {
 
    }
 
-  dataStructures()
+  def mapDataStructures() : Unit = {
+    var myNormalMap : Map[Int,Int] = Map(10->1, 9->2, 8->3, 7->4, 6-> 5)
+
+    //Gives Result in Un-ordered Way
+    myNormalMap.foreach(println)
+
+    println("\n")
+
+    var myLinkedHashMap : scala.collection.mutable.LinkedHashMap[Int,Int] = scala.collection.mutable.LinkedHashMap(10->1,8->3, 7->4,9->2, 6-> 5)
+
+    println("\n")
+    println("//Map maintains Insertion Order")
+
+    //Map maintains Insertion Order
+    myLinkedHashMap.foreach(println)
+
+    println("\n")
+    println("//Sort By Keys Asc")
+
+    //Sort By Keys Asc
+    myLinkedHashMap.toList.sortBy(_._1).foreach(println)
+
+    println("\n")
+    println("//Sort By Keys Desc")
+
+    //Sort By Keys Desc
+    myLinkedHashMap.toList.sortBy(-_._1).foreach(println)
+
+
+
+    println("\n")
+    println("//Sort By Values Asc")
+
+    //Sort By Values Asc
+    myLinkedHashMap.toList.sortBy(_._2).foreach(println)
+
+    println("\n")
+    println("//Sort By Values Desc")
+
+    //Sort By Values Desc
+    myLinkedHashMap.toList.sortBy(-_._2).foreach(println)
+
+    var myTreeMap : scala.collection.mutable.TreeMap[Int,Int] = scala.collection.mutable.TreeMap(10->1,8->3, 7->4,9->2, 6-> 5)
+
+    println("\n")
+    println("//Map will do Natural Sort by Key")
+
+    //Map will do Natural Sort by Key
+    myTreeMap.foreach(println)
+
+
+    println("\n")
+    println("//Sort TreeMap By Key")
+
+    //Sort TreeMap By Key
+    myTreeMap.foreach(println)
+
+
+
+    var myImmutableMap : Map[Int,Int] = Map(1->10,2->11)
+    println("\n")
+    println("//Add Element to Immutable Map")
+
+    //Add Element to Immutable Map
+    myImmutableMap += (3->12)
+    myImmutableMap.foreach(println)
+
+
+    println("\n")
+    println("//Update Element to Immutable Map")
+    //Update Element to Immutable Map
+    myImmutableMap += (3->13)
+    myImmutableMap.foreach(println)
+
+
+
+
+    var mymutableMap : scala.collection.mutable.Map[Int,Int] = scala.collection.mutable.Map(3->10,4->11)
+    println("\n")
+    println("//Add Element to Immutable Map")
+
+    //Add Element to Immutable Map
+    mymutableMap += (5->12)
+    mymutableMap.foreach(println)
+
+
+    println("\n")
+    println("//Update Element to Immutable Map")
+    //Update Element to Immutable Map
+    mymutableMap += (5->13)
+    mymutableMap.foreach(println)
+
+  }
+
+  def listDataStructures() : Unit = {
+    var myImmutableList : List[Int] = List(1,2,3)
+
+    println("//Add Element to Immutable List\n")
+
+    //Add Element to Immutable List
+    myImmutableList = myImmutableList :+  4
+    myImmutableList.foreach(println)
+
+    println("//Remove Element from Immutable List by Position\n")
+
+    //Remove Element from Immutable List by Position
+    myImmutableList.patch(2,Nil,1).foreach(println)
+
+    println("//Remove Element from Immutable List by Value\n")
+
+    //Remove Element from Immutable List by Value
+    myImmutableList.filterNot(_ == 2).foreach(println)
+
+
+
+
+    var myMutableList : scala.collection.mutable.ListBuffer[Int] = scala.collection.mutable.ListBuffer(1,2,3)
+
+    println("//Add Element to Mutable List\n")
+
+    //Add Element to Mutable List
+    myMutableList += 4
+    myMutableList.foreach(println)
+
+
+
+    println("//Remove Element from Mutable List by Value\n")
+
+    //Remove Element from Mutable List by Value
+    myMutableList -= 3
+    myMutableList.foreach(println)
+
+    println("//Remove Element from Mutable List by Position\n")
+
+    //Remove Element from Immutable List by Position
+    myMutableList.remove(2)
+    myMutableList.foreach(println)
+
+  }
+
+  def myCustomLogging(): Unit = {
+    val logger = LogManager.getLogger("My Logger")
+    logger.error("Hello INFO Logger Done by Ambar !!!!")
+    logger.error("Hello ERROR Logger Done by Ambar !!!!")
+  }
+
+  //dataStructures()
+  //mapDataStructures()
+  //listDataStructures()
+  //myCustomLogging
 }

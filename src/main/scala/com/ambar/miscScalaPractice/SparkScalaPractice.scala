@@ -29,6 +29,8 @@ object SparkScalaPractice extends SparkSessionProvider with App {
     //Enable Broadcast Join and How to set Spark Properties
     spark.conf.set("spark.sql.autoBroadcastJoinThreshold",10485760)
     var finalJoined1: DataFrame = branchDF.join(bankDF,branchDF("BankID") === bankDF("BankID"))
+
+    //How to check Plan of a Dataframe
     finalJoined1.explain()
 
     //Disable Broadcast Join and How to set Spark Properties
@@ -36,6 +38,7 @@ object SparkScalaPractice extends SparkSessionProvider with App {
     var finalJoined2: DataFrame = branchDF.join(bankDF,branchDF("BankID") === bankDF("BankID"))
     finalJoined2.explain()
   }
+
 
   def smallMiscConcepts = {
 
@@ -52,6 +55,15 @@ object SparkScalaPractice extends SparkSessionProvider with App {
 
     //Convert Datastructure to RDD
     val NameAgeTupleRDD = spark.sparkContext.parallelize(NameAgeTuple)
+
+    //Convert RDD to DataFrame
+    import spark.implicits._
+    NameAgeTupleRDD.toDF("Name","Age").show()
+
+    //How to get Schema of a Dataframe
+    println(NameAgeTupleDF.schema.fieldNames.toList)
+
+
     //Use OrderBy in Descending Order
     NameAgeTupleDF.orderBy(col("Age").desc).show()
 
@@ -79,7 +91,7 @@ object SparkScalaPractice extends SparkSessionProvider with App {
     println(finalSentence3)
 
 
-    //Example of using Map with DataFrame
+    //Example of using Map with DataFrame -> (Also Refer DataLoad.getTransactions)
     //Example of Converting RDD to DataFrame
     import spark.implicits._
     NameAgeTupleDF.repartition(3).rdd.map(r => ("Dr. " + r.getAs[String]("Name"),r.getAs[Int]("Age")) ).toDF("Name","Age").show()
@@ -180,6 +192,7 @@ object SparkScalaPractice extends SparkSessionProvider with App {
 
   }
 
+
   def readProjectConfigs() : Unit = {
 
     //Always use a Source Root Path (i.e. Relative Path from Folder marked as Source Root)
@@ -190,9 +203,60 @@ object SparkScalaPractice extends SparkSessionProvider with App {
     println(config.getConfig("app").getConfig("server").getString("host"))
   }
 
+  def howToCollectDataFromDataFrame() : Unit = {
+
+    val mytestData = DataLoader.getBankData
+    println(mytestData.collect().map(r => (r.getString(1) -> r)).toMap.get("ICICI").get(0))
+    println(mytestData.collect().map(r => (r.getString(1) -> r)).toMap.get("ICICI").get(1))
+    println(mytestData.collect().map(r => (r.getString(1) -> r)).toMap.get("ICICI").get(2))
+    println(mytestData.collect().map(r => (r.getString(1) -> r)).toMap.get("ICICI").get(3))
+
+  }
+
+  def equalityOfDataFramesForUnitTests() : Unit = {
+     val actualData = Seq(("Ambar",35,"Software"),
+                        ("Swati",32,"Banker"),
+                        ("Loma",52,"HouseHolder"))
+
+    val expectedData = Seq(("Loma",52,"HouseHolder"),
+                          ("Swati",32,"Banker"),
+                          ("Ambar",35,"Software"))
+
+    val actualDF = spark.createDataFrame(actualData).toDF("Name","Age","Profession")
+
+    //How to Apply Schema of One DataFrame on Another Dataframe
+    //How to Unfold a List into Vargs using _*
+    val expectedDF = spark.createDataFrame(expectedData).toDF(actualDF.schema.fieldNames: _*)
+
+    //Below will be FALSE because Order of Collections on Both Side is Incorrect
+    println(actualDF.collect().sameElements(expectedDF.collect()))
+
+    //Below will be TRUE because we convert the Collection into Key-Value base Map and the use Key-based Match
+    println(actualDF.collect().map(i => (i.getString(0) -> i)).toMap.get("Loma").sameElements(expectedDF.collect().map(i => (i.getString(0) -> i)).toMap.get("Loma")))
+
+  }
+
+  def howToHandleOptionType() : Unit = {
+
+    //Do a Pattern Matching on an Option type
+    DataLoader.getDataFrameWithOption(getNoneDataFrame = 0) match {
+      case Some(data) => data.show()
+      case None       => println("No Data returned by DataLoader.getDataFrameWithOption")
+    }
+
+    DataLoader.getDataFrameWithOption(getNoneDataFrame = 1) match {
+      case Some(data) => data.show()
+      case None       => println("No Data returned by DataLoader.getDataFrameWithOption")
+    }
+
+  }
+
   //broadcastJoin
-  smallMiscConcepts
+  //smallMiscConcepts
   //simpleExplodeAndUDFExample
   //readProjectConfigs
+  //howToCollectDataFromDataFrame
+  //equalityOfDataFramesForUnitTests
+  //howToHandleOptionType
 
 }

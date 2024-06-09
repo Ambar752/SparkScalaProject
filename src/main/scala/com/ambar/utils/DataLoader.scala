@@ -112,6 +112,7 @@ object DataLoader extends SparkSessionProvider {
 
     import spark.implicits._
 
+    //How to Use Map function on a DataFrame
     val transactionsWrapped = transactions.map(row => Transaction(
       row.getAs[Int]("TxnID"),
       row.getAs[Int]("FromAccountID"),
@@ -122,6 +123,20 @@ object DataLoader extends SparkSessionProvider {
     ))
 
     transactionsWrapped.toDF()
+  }
+
+
+  def getDataFrameWithOption(getNoneDataFrame : Int) : Option[DataFrame] = {
+
+      var output : Option[DataFrame] = None
+
+      if(getNoneDataFrame == 0) {
+        output = Some(DataLoader.getSparkSession.createDataFrame(Seq(("Ambar",35),("Swati",32))).toDF("Name","Age"))
+      } else {
+        output = None
+      }
+
+      output
   }
 
 

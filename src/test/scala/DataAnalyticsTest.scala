@@ -37,6 +37,7 @@ class DataAnalyticsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll
     val ActualOutput: Seq[(String,Int,Int)] = inputToBeTested.collect().toSeq.map(r => (r.getString(0),r.getLong(1).toInt,r.getLong(2).toInt))
     val ExpectedOutput: Seq[(String,Int,Int)] = Seq(("Axis",444,477),("HDFC",723,411))
     ActualOutput shouldEqual ExpectedOutput
+
   }
 
 }
